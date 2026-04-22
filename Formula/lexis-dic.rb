@@ -2,33 +2,28 @@ class LexisDic < Formula
   desc "AI-powered English Dictionary for macOS"
   homepage "https://github.com/seabornlee/ai-dic-repos"
   url "https://github.com/seabornlee/ai-dic-repos/releases/download/v1.0.0/AIDictionary-1.0.0.dmg"
-  sha256 "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   version "1.0.0"
   license "MIT"
-  desc "AI-powered English Dictionary for macOS with menu bar integration"
 
   def install
-    # Mount the DMG
-    mount_point = mount_dmg
+    # Create temporary mount point
+    temp_dir = Dir.mktmpdir
 
-    # Copy the .app to Applications
-    app = mount_point.join("AIDictionary.app")
-    if app.exist?
-      cp_r app, "/Applications/AIDictionary.app"
-    else
-      raise "AIDictionary.app not found in DMG"
-    end
+    # Mount DMG to temp directory
+    system "hdiutil", "attach", url, "-mountpoint", temp_dir, "-nobrowse"
 
-    # Unmount the DMG
-    system "hdiutil", "detach", mount_point
-  end
+    # Copy app to Applications
+    system "cp", "-R", "#{temp_dir}/AIDictionary.app", "/Applications/AIDictionary.app"
 
-  def post_install
-    # Set proper permissions
-    system "chmod", "-R", "755", "/Applications/AIDictionary.app"
+    # Unmount DMG
+    system "hdiutil", "detach", temp_dir, "-force"
+
+    # Clean up temp dir
+    Dir.rmdir(temp_dir) if Dir.exist?(temp_dir)
   end
 
   test do
-    assert_true File.exist?("/Applications/AIDictionary.app")
+    assert_predicate File.exist?("/Applications/AIDictionary.app"), "App should be installed"
   end
 end
