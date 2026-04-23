@@ -1,16 +1,31 @@
-class LexisDic < Cask
-  version "1.0.18"
-  sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
-
-  url "https://github.com/seabornlee/ai-dic-repos/releases/download/v#{version}/LexisDic-#{version}.dmg"
-  name "LexisDic"
+class LexisDic < Formula
   desc "AI-powered English Dictionary for macOS"
   homepage "https://github.com/seabornlee/ai-dic-repos"
+  version "{{ version }}"
+  sha256 "{{ sha256 }}"
 
-  app "LexisDic.app"
+  url "https://github.com/seabornlee/ai-dic-repos/releases/download/v{{ version }}/LexisDic-{{ version }}.dmg"
+  name "LexisDic"
+  license "MIT"
 
-  zap trash: [
-    "~/Library/Application Support/LexisDic",
-    "~/Library/Preferences/site.waterlee.aidic.LexisDic.plist",
-  ]
+  def install
+    # Mount DMG and copy .app to /Applications
+    system "hdiutil", "attach", url, "-nobrowse", "-plist", "/dev/stdin"
+    # Find mounted volume
+    json = `/usr/bin/hdiutil attach -nobrowse -plist "#{url}" 2>/dev/null`.chomp
+    require 'json'
+    plist = JSON.parse(json)
+    dev_entry = plist['system-entities'].find { |e| e['mount-point'] }
+    mount_point = dev_entry['mount-point']
+
+    # Copy app
+    system "cp", "-R", "#{mount_point}/LexisDic.app", "/Applications/LexisDic.app"
+
+    # Detach
+    system "hdiutil", "detach", mount_point, force: true
+  end
+
+  test do
+    assert_predicate File.exist?("/Applications/LexisDic.app"), "App should be installed"
+  end
 end
